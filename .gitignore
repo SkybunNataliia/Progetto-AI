@@ -1,0 +1,20 @@
+# File Python compilati
+__pycache__/
+*.py[cod]
+*.so
+
+# Ambiente virtuale
+venv/
+env/
+
+# File di log
+*.log
+*.out
+
+# Notebook temporanei
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
