@@ -130,4 +130,17 @@ class Trainer:
 
             torch.save(self.model.state_dict(), self.last_model_path)
             
+    def validate(self):
+        self.model.eval()
+        total_loss = 0.0
+        with torch.no_grad():
+            for inputs, targets in self.val_loader:
+                inputs = inputs.to(self.device)
+                targets = targets.to(self.device)
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs.squeeze(), targets)
+                total_loss += loss.item() * inputs.size(0)
+        avg_loss = total_loss / len(self.val_loader.dataset)
+        return avg_loss
+    
     
