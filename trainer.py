@@ -55,3 +55,29 @@ class Trainer:
         self.early_stop_eval_freq = cfg.early_stop_parameters.loss_evaluation_epochs
         self.early_stop_patience = cfg.early_stop_parameters.patience
         self.early_stop_improve_rate = cfg.early_stop_parameters.improvement_rate
+    
+    def _get_model(self):
+        net_type = self.cfg.train_parameters.network_type.lower()
+        if net_type == "lstm":
+            return LSTMModel(
+                input_size=self._input_size(),
+                hidden_size=self.cfg.rnn_parameters.hidden_size,
+                num_layers=self.cfg.rnn_parameters.num_layers,
+            )
+        elif net_type == "gru":
+            return GRUModel(
+                input_size=self._input_size(),
+                hidden_size=self.cfg.rnn_parameters.hidden_size,
+                num_layers=self.cfg.rnn_parameters.num_layers,
+            )
+        elif net_type == "cnn":
+            return CNN1DModel(
+                input_size=self._input_size(),
+                num_filters=self.cfg.cnn_parameters.num_filters,
+                kernel_size=self.cfg.cnn_parameters.kernel_size,
+                stride=self.cfg.cnn_parameters.stride,
+                padding=self.cfg.cnn_parameters.padding,
+            )
+        else:
+            raise ValueError(f"Unsupported network type: {net_type}")
+
