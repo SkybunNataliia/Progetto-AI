@@ -29,13 +29,11 @@
       "type": "object",
       "required": [
         "train",
-        "test",
-        "show_preview"
+        "test"
       ],
       "properties": {
         "train": { "type": "boolean" },
-        "test": { "type": "boolean" },
-        "show_preview": { "type": "boolean" }
+        "test": { "type": "boolean" }
       }
     },
     "hyper_parameters": {

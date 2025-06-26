@@ -7,8 +7,7 @@
   },
   "parameters": {
     "train": true,
-    "test": true,
-    "show_preview": true
+    "test": true
   },
   "hyper_parameters": {
     "batch_size": 32,
