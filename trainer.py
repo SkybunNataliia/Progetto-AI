@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 from models.cnn1d_model import CNN1DModel
@@ -56,6 +57,10 @@ class Trainer:
         self.early_stop_patience = cfg.early_stop_parameters.patience
         self.early_stop_improve_rate = cfg.early_stop_parameters.improvement_rate
     
+    def _input_size(self):
+        df = pd.read_csv(self.cfg.io.training_file)
+        return df.shape[1] - 1
+    
     def _get_model(self):
         net_type = self.cfg.train_parameters.network_type.lower()
         if net_type == "lstm":
@@ -81,3 +86,48 @@ class Trainer:
         else:
             raise ValueError(f"Unsupported network type: {net_type}")
 
+    def train(self):
+        best_loss = float('inf')
+        epochs_no_improve = 0
+
+        for epoch in range(self.epochs):
+            self.model.train()
+            running_loss = 0.0
+            for i, (inputs, targets) in enumerate(self.train_loader, 1):
+                inputs = inputs.to(self.device)
+                targets = targets.to(self.device)
+
+                self.optimizer.zero_grad()
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs.squeeze(), targets)
+                loss.backward()
+                self.optimizer.step()
+
+                running_loss += loss.item()
+
+                if self.step_monitor > 0 and i % self.step_monitor == 0:
+                    avg_loss = running_loss / self.step_monitor
+                    print(f"Epoch {epoch} Step {i} - Loss: {avg_loss:.6f}")
+                    running_loss = 0.0
+
+            val_loss = self.validate()
+            print(f"Epoch {epoch} Validation Loss: {val_loss:.6f}")
+
+            if val_loss + self.early_stop_improve_rate < best_loss:
+                best_loss = val_loss
+                epochs_no_improve = 0
+                torch.save(self.model.state_dict(), self.best_model_path)
+                print(f"Best model saved at epoch {epoch} with val loss {val_loss:.6f}")
+            else:
+                epochs_no_improve += 1
+                if epoch >= self.early_stop_start and epochs_no_improve >= self.early_stop_patience:
+                    print(f"Early stopping triggered at epoch {epoch}")
+                    break
+
+            if val_loss <= self.loss_target:
+                print(f"Loss target {self.loss_target} reached at epoch {epoch}. Stopping training.")
+                break
+
+            torch.save(self.model.state_dict(), self.last_model_path)
+            
+    
