@@ -99,7 +99,7 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
-                loss = self.criterion(outputs.squeeze(), targets)
+                loss = self.criterion(outputs, targets)
                 loss.backward()
                 self.optimizer.step()
 
@@ -131,16 +131,31 @@ class Trainer:
             torch.save(self.model.state_dict(), self.last_model_path)
             
     def validate(self):
+        loss, _, _ = self.evaluate(self.val_loader)
+        return loss
+    
+    def evaluate(self, data_loader):
         self.model.eval()
         total_loss = 0.0
+        preds = []
+        targets_list = []
+
         with torch.no_grad():
-            for inputs, targets in self.val_loader:
-                inputs = inputs.to(self.device)
-                targets = targets.to(self.device)
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs.squeeze(), targets)
-                total_loss += loss.item() * inputs.size(0)
-        avg_loss = total_loss / len(self.val_loader.dataset)
-        return avg_loss
-    
-    
+            for batch in data_loader:
+                if isinstance(batch, tuple) and len(batch) == 2:
+                    inputs, targets = batch
+                    inputs = inputs.to(self.device)
+                    targets = targets.to(self.device)
+                    outputs = self.model(inputs)
+                    loss = self.criterion(outputs.squeeze(), targets)
+                    total_loss += loss.item() * inputs.size(0)
+                    preds.extend(outputs.squeeze().cpu().tolist())
+                    targets_list.extend(targets.cpu().tolist())
+                else:
+                    # Test set
+                    inputs = batch.to(self.device)
+                    outputs = self.model(inputs)
+                    preds.extend(outputs.cpu().tolist())
+
+        avg_loss = total_loss / len(data_loader.dataset) if targets_list else None
+        return avg_loss, preds, targets_list
