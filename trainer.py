@@ -159,3 +159,24 @@ class Trainer:
 
         avg_loss = total_loss / len(data_loader.dataset) if targets_list else None
         return avg_loss, preds, targets_list
+    
+    def test(self, use_current_model: bool = False, print_loss=True):
+        if use_current_model:
+            model = self.model
+        else:
+            model = self._get_model().to(self.device)
+            try:
+                model.load_state_dict(torch.load(self.best_model_path, map_location=self.device))
+                print("Best model loaded for testing.")
+            except Exception as e:
+                print(f'Error loading model state_dict: {repr(e)}')
+                model = self.model
+
+        self.model = model
+        
+        loss, preds, targets = self.evaluate(self.test_loader)
+
+        if print_loss and loss is not None:
+            print(f"Test Loss: {loss:.6f}")
+            
+        return loss, preds, targets
