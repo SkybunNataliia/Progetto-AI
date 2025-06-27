@@ -27,10 +27,9 @@ class BikeSharingDataset(Dataset):
             self.targets = None
 
     def __len__(self):
-        return len(self.df) - self.seq_len
+        return len(self.features) - self.seq_len
     
     def __getitem__(self, idx):
-        
         x = self.features[idx : idx + self.seq_len]
         x_tensor = torch.tensor(x, dtype=torch.float32)
 

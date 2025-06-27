@@ -9,12 +9,13 @@ from models.gru_model import GRUModel
 from models.lstm_model import LSTMModel
 from utils.data_loader import get_dataloaders
 
+torch.manual_seed(42)
+
 class Trainer:
     def __init__(self, cfg):
         self.cfg = cfg
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = self._get_model().to(self.device)
+        self.model = self._get_model()
 
         batch_size = cfg.hyper_parameters.batch_size
         seq_len = cfg.hyper_parameters.window_size
@@ -35,11 +36,10 @@ class Trainer:
         
         if self.cfg.train_parameters.reload_last_model:
             try:
-                self.model.load_state_dict(torch.load(self.last_model_outpath_sd))
+                self.model.load_state_dict(torch.load(self.last_model_path))
                 print('Last model state_dict successfully reloaded.')
             except Exception as e:
                 print(f'Cannot reload last model state_dict: {e}')
-
 
         self.criterion = nn.MSELoss()
         self.optimizer = optim.SGD(
@@ -93,10 +93,8 @@ class Trainer:
         for epoch in range(self.epochs):
             self.model.train()
             running_loss = 0.0
-            for i, (inputs, targets) in enumerate(self.train_loader, 1):
-                inputs = inputs.to(self.device)
-                targets = targets.to(self.device)
-
+            
+            for i, (inputs, targets) in enumerate(self.train_loader, 0):
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
@@ -107,12 +105,16 @@ class Trainer:
 
                 if self.step_monitor > 0 and i % self.step_monitor == 0:
                     avg_loss = running_loss / self.step_monitor
-                    print(f"Epoch {epoch} Step {i} - Loss: {avg_loss:.6f}")
+                    print(f"Epoch {epoch} Step {i+1} - Loss: {avg_loss:.6f}")
                     running_loss = 0.0
 
             val_loss = self.validate()
-            print(f"Epoch {epoch} Validation Loss: {val_loss:.6f}")
+            if val_loss is not None:
+                print(f"[Validation Loss]: {val_loss:.6f}")
+            else:
+                print(f"[Validation Loss]: N/A (no targets)")
 
+            # Early stop
             if val_loss + self.early_stop_improve_rate < best_loss:
                 best_loss = val_loss
                 epochs_no_improve = 0
@@ -131,8 +133,18 @@ class Trainer:
             torch.save(self.model.state_dict(), self.last_model_path)
             
     def validate(self):
-        loss, _, _ = self.evaluate(self.val_loader)
-        return loss
+        self.model.eval()
+        total_loss = 0.0
+        count = 0
+
+        with torch.no_grad():
+            for inputs, targets in self.val_loader:
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                total_loss += loss.item()
+                count += 1
+
+        return total_loss / count if count > 0 else None
     
     def evaluate(self, data_loader):
         self.model.eval()
@@ -144,18 +156,18 @@ class Trainer:
             for batch in data_loader:
                 if isinstance(batch, tuple) and len(batch) == 2:
                     inputs, targets = batch
-                    inputs = inputs.to(self.device)
-                    targets = targets.to(self.device)
+                    
                     outputs = self.model(inputs)
-                    loss = self.criterion(outputs.squeeze(), targets)
+                    loss = self.criterion(outputs, targets)
                     total_loss += loss.item() * inputs.size(0)
-                    preds.extend(outputs.squeeze().cpu().tolist())
-                    targets_list.extend(targets.cpu().tolist())
+                    
+                    preds.extend(outputs.tolist())
+                    targets_list.extend(targets.tolist())
                 else:
                     # Test set
-                    inputs = batch.to(self.device)
+                    inputs = batch[0] if isinstance(batch, (list, tuple)) else batch
                     outputs = self.model(inputs)
-                    preds.extend(outputs.cpu().tolist())
+                    preds.extend(outputs.tolist())
 
         avg_loss = total_loss / len(data_loader.dataset) if targets_list else None
         return avg_loss, preds, targets_list
@@ -164,9 +176,9 @@ class Trainer:
         if use_current_model:
             model = self.model
         else:
-            model = self._get_model().to(self.device)
+            model = self._get_model()
             try:
-                model.load_state_dict(torch.load(self.best_model_path, map_location=self.device))
+                model.load_state_dict(torch.load(self.best_model_path, map_location='cpu'))
                 print("Best model loaded for testing.")
             except Exception as e:
                 print(f'Error loading model state_dict: {repr(e)}')
@@ -175,6 +187,8 @@ class Trainer:
         self.model = model
         
         loss, preds, targets = self.evaluate(self.test_loader)
+        
+        print(f"Numero di predizioni generate nel test: {len(preds)}")
 
         if print_loss and loss is not None:
             print(f"Test Loss: {loss:.6f}")
