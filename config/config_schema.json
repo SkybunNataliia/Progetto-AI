@@ -97,9 +97,14 @@
       "required": ["num_filters", "kernel_size", "stride", "padding"],
       "properties": {
         "num_filters": {
-          "type": "number",
-          "minimum": 1,
-          "maximum": 1024
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1024
+          },
+          "minItems": 1,
+          "maxItems": 10
         },
         "kernel_size": {
           "type": "number",

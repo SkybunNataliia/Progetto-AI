@@ -21,13 +21,13 @@
     "num_layers": 2
   },
   "cnn_parameters": {
-    "num_filters": 32,
+    "num_filters": [32, 64],
     "kernel_size": 3,
     "stride": 1,
     "padding": 1
     },
   "train_parameters": {
-    "network_type": "lstm",
+    "network_type": "cnn",
     "step_monitor": 10,
     "loss_target": 0.01,
     "reload_last_model": false
