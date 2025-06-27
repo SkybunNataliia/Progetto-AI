@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 from pathlib import Path
-import matplotlib.pyplot as plt
 from models.cnn1d_model import CNN1DModel
 from models.gru_model import GRUModel
 from models.lstm_model import LSTMModel
@@ -109,10 +108,7 @@ class Trainer:
                     running_loss = 0.0
 
             val_loss = self.validate()
-            if val_loss is not None:
-                print(f"[Validation Loss]: {val_loss:.6f}")
-            else:
-                print(f"[Validation Loss]: N/A (no targets)")
+            print(f"[Validation Loss]: {val_loss:.6f}")
 
             # Early stop
             if val_loss + self.early_stop_improve_rate < best_loss:
@@ -151,25 +147,17 @@ class Trainer:
         total_loss = 0.0
         preds = []
         targets_list = []
-
+        
         with torch.no_grad():
-            for batch in data_loader:
-                if isinstance(batch, tuple) and len(batch) == 2:
-                    inputs, targets = batch
-                    
-                    outputs = self.model(inputs)
-                    loss = self.criterion(outputs, targets)
-                    total_loss += loss.item() * inputs.size(0)
-                    
-                    preds.extend(outputs.tolist())
-                    targets_list.extend(targets.tolist())
-                else:
-                    # Test set
-                    inputs = batch[0] if isinstance(batch, (list, tuple)) else batch
-                    outputs = self.model(inputs)
-                    preds.extend(outputs.tolist())
+            for inputs, targets in data_loader:
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                total_loss += loss.item() * inputs.size(0)
 
-        avg_loss = total_loss / len(data_loader.dataset) if targets_list else None
+                preds.extend(outputs.tolist())
+                targets_list.extend(targets.tolist())
+
+        avg_loss = total_loss / len(data_loader.dataset)
         return avg_loss, preds, targets_list
     
     def test(self, use_current_model: bool = False, print_loss=True):
@@ -187,8 +175,6 @@ class Trainer:
         self.model = model
         
         loss, preds, targets = self.evaluate(self.test_loader)
-        
-        print(f"Numero di predizioni generate nel test: {len(preds)}")
 
         if print_loss and loss is not None:
             print(f"Test Loss: {loss:.6f}")
