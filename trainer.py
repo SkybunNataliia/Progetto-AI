@@ -29,9 +29,10 @@ class Trainer:
 
         self.out_root = Path(cfg.io.out_folder)
         self.out_root.mkdir(parents=True, exist_ok=True)
-
-        self.last_model_path = self.out_root / "last_model.pth"
-        self.best_model_path = self.out_root / "best_model.pth"
+        
+        model_name = self.cfg.train_parameters.network_type.lower()
+        self.last_model_path = self.out_root / f"{model_name}_last_model.pth"
+        self.best_model_path = self.out_root / f"{model_name}_best_model.pth"
         
         if self.cfg.train_parameters.reload_last_model:
             try:
@@ -115,7 +116,7 @@ class Trainer:
                 best_loss = val_loss
                 epochs_no_improve = 0
                 torch.save(self.model.state_dict(), self.best_model_path)
-                print(f"Best model saved at epoch {epoch} with val loss {val_loss:.6f}")
+                print(f"[{self.cfg.train_parameters.network_type.upper()}] Best model saved at epoch {epoch} with val loss {val_loss:.6f}")
             else:
                 epochs_no_improve += 1
                 if epoch >= self.early_stop_start and epochs_no_improve >= self.early_stop_patience:
