@@ -12,7 +12,7 @@
   "hyper_parameters": {
     "batch_size": 32,
     "window_size": 24,
-    "epochs": 50,
+    "epochs": 100,
     "learning_rate": 0.001,
     "momentum": 0.9
   },
@@ -27,13 +27,13 @@
     "padding": 1
     },
   "train_parameters": {
-    "network_type": "gru",
+    "network_type": "lstm",
     "step_monitor": 10,
     "loss_target": 0.01,
     "reload_last_model": false
     },
   "early_stop_parameters": {
-    "loss_evaluation_epochs": 5,
+    "loss_evaluation_epochs": 1,
     "start_epoch": 10,
     "patience": 10,
     "improvement_rate": 0.001

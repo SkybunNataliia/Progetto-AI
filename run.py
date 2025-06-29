@@ -1,5 +1,6 @@
 import json
 import jsonschema
+import joblib
 from pathlib import Path
 from types import SimpleNamespace
 from trainer import Trainer
@@ -40,7 +41,9 @@ def main():
         print("Invalid configuration. Aborting.")
         return
 
-    trainer = Trainer(cfg)
+    scaler_target = joblib.load("scaler_target.pkl")
+    
+    trainer = Trainer(cfg, scaler_target=scaler_target)
         
     if cfg.parameters.train:
         trainer.train()

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from models.cnn1d_model import CNN1DModel
 from models.gru_model import GRUModel
@@ -12,10 +13,12 @@ from utils.metrics import evaluate_all
 torch.manual_seed(42)
 
 class Trainer:
-    def __init__(self, cfg):
+    def __init__(self, cfg, scaler_target=None):
         self.cfg = cfg
 
         self.model = self._get_model()
+        
+        self.scaler_target = scaler_target
 
         batch_size = cfg.hyper_parameters.batch_size
         seq_len = cfg.hyper_parameters.window_size
@@ -155,7 +158,11 @@ class Trainer:
                 preds.extend(outputs.cpu().detach().numpy().tolist())
                 targets_list.extend(targets.cpu().detach().numpy().tolist())
                 
-        metrics = evaluate_all(preds, targets_list)
+        if self.scaler_target:
+            preds_original = self.scaler_target.inverse_transform(np.array(preds).reshape(-1,1)).flatten()
+            targets_original = self.scaler_target.inverse_transform(np.array(targets_list).reshape(-1,1)).flatten()
+        
+        metrics = evaluate_all(preds_original, targets_original)
         
         return metrics, preds, targets_list
     
@@ -176,6 +183,7 @@ class Trainer:
         metrics, preds, targets = self.evaluate(self.test_loader)
 
         if print_loss:
-            print(f"Test Loss: {metrics['MSE']:.6f}")
+            print(f"Test MSE: {metrics['MSE']:.6f}")
+            print(f"Test MAPE: {metrics['MAPE']:.2f}%")
             
         return metrics, preds, targets
