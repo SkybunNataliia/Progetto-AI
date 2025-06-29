@@ -7,6 +7,7 @@ from models.cnn1d_model import CNN1DModel
 from models.gru_model import GRUModel
 from models.lstm_model import LSTMModel
 from utils.data_loader import get_dataloaders
+from utils.metrics import evaluate_all
 
 torch.manual_seed(42)
 
@@ -145,21 +146,18 @@ class Trainer:
     
     def evaluate(self, data_loader):
         self.model.eval()
-        total_loss = 0.0
         preds = []
         targets_list = []
         
         with torch.no_grad():
             for inputs, targets in data_loader:
                 outputs = self.model(inputs)
-                loss = self.criterion(outputs, targets)
-                total_loss += loss.item() * inputs.size(0)
-
-                preds.extend(outputs.tolist())
-                targets_list.extend(targets.tolist())
-
-        avg_loss = total_loss / len(data_loader.dataset)
-        return avg_loss, preds, targets_list
+                preds.extend(outputs.cpu().detach().numpy().tolist())
+                targets_list.extend(targets.cpu().detach().numpy().tolist())
+                
+        metrics = evaluate_all(preds, targets_list)
+        
+        return metrics, preds, targets_list
     
     def test(self, use_current_model: bool = False, print_loss=True):
         if use_current_model:
@@ -175,9 +173,9 @@ class Trainer:
 
         self.model = model
         
-        loss, preds, targets = self.evaluate(self.test_loader)
+        metrics, preds, targets = self.evaluate(self.test_loader)
 
-        if print_loss and loss is not None:
-            print(f"Test Loss: {loss:.6f}")
+        if print_loss:
+            print(f"Test Loss: {metrics['MSE']:.6f}")
             
-        return loss, preds, targets
+        return metrics, preds, targets
