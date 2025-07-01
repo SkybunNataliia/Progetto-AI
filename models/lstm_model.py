@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 class LSTMModel(nn.Module):
@@ -9,7 +8,7 @@ class LSTMModel(nn.Module):
 
     def forward(self, x):
         # x: [batch, seq_len, features]
-        out, (hn, cn) = self.lstm(x)
+        out, (_, _) = self.lstm(x)
         out = out[:, -1, :]
         out = self.fc(out)
         return out.squeeze(1)

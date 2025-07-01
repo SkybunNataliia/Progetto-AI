@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 class GRUModel(nn.Module):
@@ -8,7 +7,7 @@ class GRUModel(nn.Module):
         self.fc = nn.Linear(hidden_size, 1)
 
     def forward(self, x):
-        out, hn = self.gru(x)
+        out, _ = self.gru(x)
         out = out[:, -1, :]
         out = self.fc(out)
         return out.squeeze(1)

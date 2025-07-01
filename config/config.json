@@ -29,13 +29,13 @@
   "train_parameters": {
     "network_type": "lstm",
     "step_monitor": 10,
-    "loss_target": 0.01,
+    "loss_target": 0.1,
     "reload_last_model": false
     },
   "early_stop_parameters": {
     "loss_evaluation_epochs": 1,
     "start_epoch": 10,
-    "patience": 10,
+    "patience": 15,
     "improvement_rate": 0.001
   }
 }
