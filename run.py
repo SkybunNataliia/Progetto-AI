@@ -4,6 +4,7 @@ import joblib
 from pathlib import Path
 from types import SimpleNamespace
 from trainer import Trainer
+from utils.seed_utils import set_seed
 
 def check_and_get_configuration(filename: str, validation_filename: str) -> object:
     """Valida un file di configurazione JSON con un file schema JSON e lo restituisce come oggetto."""
@@ -40,6 +41,8 @@ def main():
     if cfg is None:
         print("Invalid configuration. Aborting.")
         return
+    
+    set_seed(42)
 
     scaler_target = joblib.load("scaler_target.pkl")
     

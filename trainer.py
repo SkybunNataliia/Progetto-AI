@@ -9,11 +9,13 @@ from models.gru_model import GRUModel
 from models.lstm_model import LSTMModel
 from utils.data_loader import get_dataloaders
 from utils.metrics import evaluate_all
-
-torch.manual_seed(42)
+from utils.seed_utils import set_seed
 
 class Trainer:
     def __init__(self, cfg, scaler_target=None):
+        
+        set_seed(42)
+        
         self.cfg = cfg
 
         self.model = self._get_model()
