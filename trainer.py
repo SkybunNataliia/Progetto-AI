@@ -11,19 +11,26 @@ from utils.data_loader import get_dataloaders
 from utils.metrics import evaluate_all
 from utils.seed_utils import set_seed
 from torch.utils.tensorboard import SummaryWriter
+from utils.experiment_utils import create_experiment_dir, get_next_version
 
 class Trainer:
-    def __init__(self, cfg, scaler_target=None):
+    def __init__(self, cfg, scaler_target=None, version=None, base_exp_path="experiments"):
         
         set_seed(42)
-        
         self.cfg = cfg
         
-        self.out_root = Path(cfg.io.out_folder)
-        self.out_root.mkdir(parents=True, exist_ok=True)
+        model_name = cfg.train_parameters.network_type.lower()
+        model_dir = Path(base_exp_path) / model_name
         
-        runs_path = Path("runs")
-        self.writer = SummaryWriter(log_dir=str(runs_path))
+        if version is None:
+            version = get_next_version(model_dir)
+            
+        self.exp_dir = create_experiment_dir(base_exp_path, model_name, version, "./config/config.json")
+        
+        self.writer = SummaryWriter(log_dir=str(self.exp_dir / "runs"))
+        
+        self.out_root = self.exp_dir
+        self.out_root.mkdir(parents=True, exist_ok=True)
 
         self.model = self._get_model()
         
@@ -43,7 +50,6 @@ class Trainer:
             seq_len=seq_len
         )
         
-        model_name = self.cfg.train_parameters.network_type.lower()
         self.last_model_path = self.out_root / f"{model_name}_last_model.pth"
         self.best_model_path = self.out_root / f"{model_name}_best_model.pth"
         

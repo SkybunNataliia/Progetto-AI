@@ -3,7 +3,7 @@
     "training_file": "data/processed/train.csv",
     "validation_file": "data/processed/val.csv",
     "test_file": "data/processed/test.csv",
-    "out_folder": "results/"
+    "out_folder": "experiments/"
   },
   "parameters": {
     "train": true,
@@ -27,7 +27,7 @@
     "padding": 1
     },
   "train_parameters": {
-    "network_type": "lstm",
+    "network_type": "gru",
     "step_monitor": 10,
     "loss_target": 0.001,
     "reload_last_model": false

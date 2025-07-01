@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from trainer import Trainer
 from utils.seed_utils import set_seed
+from utils.experiment_utils import get_next_version
 
 def check_and_get_configuration(filename: str, validation_filename: str) -> object:
     """Valida un file di configurazione JSON con un file schema JSON e lo restituisce come oggetto."""
@@ -46,7 +47,14 @@ def main():
 
     scaler_target = joblib.load("scaler_target.pkl")
     
-    trainer = Trainer(cfg, scaler_target=scaler_target)
+    model_name = cfg.train_parameters.network_type.lower()
+    base_exp_path = Path(cfg.io.out_folder)
+    model_dir = base_exp_path / model_name
+    
+    version = get_next_version(model_dir)
+    print(f"Starting experiment version: {version}")
+    
+    trainer = Trainer(cfg, scaler_target=scaler_target, version=version, base_exp_path=str(base_exp_path))
         
     if cfg.parameters.train:
         trainer.train()
