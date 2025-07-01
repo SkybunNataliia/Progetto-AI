@@ -53,6 +53,8 @@ def main():
 
     if cfg.parameters.test:
         trainer.test(print_loss=True)
+        
+    trainer.writer.close()
 
 
 if __name__ == "__main__":

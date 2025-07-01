@@ -10,6 +10,7 @@ from models.lstm_model import LSTMModel
 from utils.data_loader import get_dataloaders
 from utils.metrics import evaluate_all
 from utils.seed_utils import set_seed
+from torch.utils.tensorboard import SummaryWriter
 
 class Trainer:
     def __init__(self, cfg, scaler_target=None):
@@ -17,8 +18,17 @@ class Trainer:
         set_seed(42)
         
         self.cfg = cfg
+        
+        self.out_root = Path(cfg.io.out_folder)
+        self.out_root.mkdir(parents=True, exist_ok=True)
+        
+        runs_path = Path("runs")
+        self.writer = SummaryWriter(log_dir=str(runs_path))
 
         self.model = self._get_model()
+        
+        sample_input = torch.randn(1, self.cfg.hyper_parameters.window_size, self._input_size())
+        self.writer.add_graph(self.model, sample_input)
         
         self.scaler_target = scaler_target
 
@@ -32,9 +42,6 @@ class Trainer:
             batch_size=batch_size,
             seq_len=seq_len
         )
-
-        self.out_root = Path(cfg.io.out_folder)
-        self.out_root.mkdir(parents=True, exist_ok=True)
         
         model_name = self.cfg.train_parameters.network_type.lower()
         self.last_model_path = self.out_root / f"{model_name}_last_model.pth"
@@ -112,10 +119,20 @@ class Trainer:
                 if self.step_monitor > 0 and i % self.step_monitor == 0:
                     avg_loss = running_loss / self.step_monitor
                     print(f"Epoch {epoch} Step {i+1} - Loss: {avg_loss:.6f}")
-                    running_loss = 0.0
-
+                    
+            epoch_train_loss = running_loss / len(self.train_loader)
             val_loss = self.validate()
+            
             print(f"[Validation Loss]: {val_loss:.6f}")
+
+            self.writer.add_scalar('Loss/train', epoch_train_loss, epoch)
+            self.writer.add_scalar('Loss/val', val_loss, epoch)
+            
+            # Logga parametri e gradienti
+            for name, param in self.model.named_parameters():
+                if param.requires_grad and param.grad is not None:
+                    self.writer.add_histogram(f"{name}/grad", param.grad, epoch)
+                    self.writer.add_histogram(f"{name}/data", param.data, epoch)
 
             # Early stop
             if val_loss + self.early_stop_improve_rate < best_loss:
@@ -187,5 +204,10 @@ class Trainer:
         if print_loss:
             print(f"Test MSE: {metrics['MSE']:.6f}")
             print(f"Test MAPE: {metrics['MAPE']:.2f}%")
+        
+        # Logging TensorBoard
+        test_loss = metrics.get('MSE', None)
+        if test_loss is not None:
+            self.writer.add_scalar('Loss/test', test_loss, 0)
             
         return metrics, preds, targets
