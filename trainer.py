@@ -72,10 +72,10 @@ class Trainer:
                 print(f'Cannot reload last model state_dict: {e}')
 
         self.criterion = nn.MSELoss()
-        self.optimizer = optim.SGD(
-            self.model.parameters(),
-            lr=cfg.hyper_parameters.learning_rate,
-            momentum=cfg.hyper_parameters.momentum
+        self.optimizer = optim.Adam(
+            self.model.parameters(), 
+            lr=cfg.hyper_parameters.learning_rate, 
+            weight_decay=1e-4
         )
 
         self.epochs = cfg.hyper_parameters.epochs
