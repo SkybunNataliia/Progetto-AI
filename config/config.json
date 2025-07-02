@@ -27,7 +27,7 @@
     "padding": 1
     },
   "train_parameters": {
-    "network_type": "gru",
+    "network_type": "lstm",
     "step_monitor": 10,
     "loss_target": 0.001,
     "reload_last_model": false

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 import numpy as np
+import json
 from pathlib import Path
 from models.cnn1d_model import CNN1DModel
 from models.gru_model import GRUModel
@@ -31,6 +32,16 @@ class Trainer:
         
         self.out_root = self.exp_dir
         self.out_root.mkdir(parents=True, exist_ok=True)
+        
+        self.results_log = {
+            "model": model_name,
+            "version": version,
+            "hyperparameters": vars(self.cfg.hyper_parameters),
+            "training_log": [],
+            "validation_loss_per_epoch": [],
+            "early_stopping_epoch": None,
+            "test_results": {}
+        }
 
         self.model = self._get_model()
         
@@ -75,6 +86,10 @@ class Trainer:
         self.early_stop_eval_freq = cfg.early_stop_parameters.loss_evaluation_epochs
         self.early_stop_patience = cfg.early_stop_parameters.patience
         self.early_stop_improve_rate = cfg.early_stop_parameters.improvement_rate
+    
+    def _log(self, message: str):
+        print(message)
+        self.results_log["training_log"].append(message)
     
     def _input_size(self):
         df = pd.read_csv(self.cfg.io.training_file)
@@ -124,12 +139,13 @@ class Trainer:
 
                 if self.step_monitor > 0 and i % self.step_monitor == 0:
                     avg_loss = running_loss / self.step_monitor
-                    print(f"Epoch {epoch} Step {i+1} - Loss: {avg_loss:.6f}")
+                    self._log(f"Epoch {epoch} Step {i+1} - Loss: {avg_loss:.6f}")
                     
             epoch_train_loss = running_loss / len(self.train_loader)
             val_loss = self.validate()
             
             print(f"[Validation Loss]: {val_loss:.6f}")
+            self.results_log["validation_loss_per_epoch"].append(val_loss)
 
             self.writer.add_scalar('Loss/train', epoch_train_loss, epoch)
             self.writer.add_scalar('Loss/val', val_loss, epoch)
@@ -150,13 +166,18 @@ class Trainer:
                 epochs_no_improve += 1
                 if epoch >= self.early_stop_start and epochs_no_improve >= self.early_stop_patience:
                     print(f"Early stopping triggered at epoch {epoch}")
+                    self.results_log["early_stopping_epoch"] = epoch
                     break
 
             if val_loss <= self.loss_target:
-                print(f"Loss target {self.loss_target} reached at epoch {epoch}. Stopping training.")
+                self._log(f"Loss target {self.loss_target} reached at epoch {epoch}. Stopping training.")
                 break
 
             torch.save(self.model.state_dict(), self.last_model_path)
+            
+            results_path = self.out_root / "results.json"
+            with open(results_path, "w") as f:
+                json.dump(self.results_log, f, indent=4)
             
     def validate(self):
         self.model.eval()
@@ -210,6 +231,11 @@ class Trainer:
         if print_loss:
             print(f"Test MSE: {metrics['MSE']:.6f}")
             print(f"Test MAPE: {metrics['MAPE']:.2f}%")
+            
+        self.results_log["test_results"] = metrics
+        
+        with open(self.out_root / "results.json", "w") as f:
+            json.dump(self.results_log, f, indent=4)
         
         # Logging TensorBoard
         test_loss = metrics.get('MSE', None)
