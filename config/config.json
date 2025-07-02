@@ -17,8 +17,8 @@
     "momentum": 0.9
   },
   "rnn_parameters": {
-    "hidden_size": 64,
-    "num_layers": 2
+    "hidden_size": 256,
+    "num_layers": 4
   },
   "cnn_parameters": {
     "num_filters": [32, 64],
