@@ -13,7 +13,7 @@
     "batch_size": 32,
     "window_size": 24,
     "epochs": 100,
-    "learning_rate": 0.005,
+    "learning_rate": 0.001,
     "momentum": 0.9
   },
   "rnn_parameters": {
