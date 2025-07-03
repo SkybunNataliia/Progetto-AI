@@ -133,7 +133,8 @@ class Trainer:
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                # Per Gru e Cnn
+                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 self.optimizer.step()
 
                 running_loss += loss.item()
@@ -228,6 +229,13 @@ class Trainer:
         self.model = model
         
         metrics, preds, targets = self.evaluate(self.test_loader)
+        
+        # Salva le predizioni e i valori target reali, per grafici futuri
+        df_preds = pd.DataFrame({
+            'target': targets,
+            'prediction': preds
+        })
+        df_preds.to_csv(self.out_root / "preds_vs_targets.csv", index=False)
 
         if print_loss:
             print(f"Test MSE: {metrics['MSE']:.6f}")

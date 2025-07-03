@@ -13,7 +13,7 @@
     "batch_size": 32,
     "window_size": 24,
     "epochs": 100,
-    "learning_rate": 0.001,
+    "learning_rate": 0.005,
     "momentum": 0.9
   },
   "rnn_parameters": {
@@ -27,7 +27,7 @@
     "padding": 1
     },
   "train_parameters": {
-    "network_type": "gru",
+    "network_type": "lstm",
     "step_monitor": 10,
     "loss_target": 0.001,
     "reload_last_model": false

@@ -1,0 +1,41 @@
+{
+  "io": {
+    "training_file": "data/processed/train.csv",
+    "validation_file": "data/processed/val.csv",
+    "test_file": "data/processed/test.csv",
+    "out_folder": "experiments/"
+  },
+  "parameters": {
+    "train": true,
+    "test": true
+  },
+  "hyper_parameters": {
+    "batch_size": 32,
+    "window_size": 24,
+    "epochs": 100,
+    "learning_rate": 0.001,
+    "momentum": 0.9
+  },
+  "rnn_parameters": {
+    "hidden_size": 256,
+    "num_layers": 4
+  },
+  "cnn_parameters": {
+    "num_filters": [32, 64],
+    "kernel_size": 3,
+    "stride": 1,
+    "padding": 1
+    },
+  "train_parameters": {
+    "network_type": "gru",
+    "step_monitor": 10,
+    "loss_target": 0.001,
+    "reload_last_model": false
+    },
+  "early_stop_parameters": {
+    "loss_evaluation_epochs": 1,
+    "start_epoch": 10,
+    "patience": 15,
+    "improvement_rate": 0.001
+  }
+}
